@@ -58,66 +58,7 @@
             //如果是正则匹配的路由
             } else {
 
-                $pos = 0;
-
-                foreach( $this->_routers as $router ){
-
-                    $router = preg_replace_callback('#:[^/)]+#i', function( $matches ){
-
-                        if (isset( self::COMMON_PATTERNS[$matches[0]] ) ) {
-
-                            return self::COMMON_PATTERNS[$matches[0]];
-
-                        } else {
-
-                            return '([^/]+)';
-                        }
-
-                    }, $router);
-
-                    /*
-                    if ( strpos( $router, ':' ) !== false) {
-                        $router = str_replace( array_keys(self::COMMON_PATTERNS), array_values(self::COMMON_PATTERNS), $router );
-                    }*/
-
-                    //uri matched
-                    if ( preg_match( '#^'. $router .'$#', $uri, $matched) ){
-
-                        //request method matched
-                        if ( $this->_methods[$pos] == $method || $this->_methods[$pos] == self::ANY_METHOD ){
-
-                            $this->_foundRouter = true;
-
-                            echo "允许的method: ".$this->_methods[$pos].'<br />';
-                            echo "请求的method: ".$method.'<br />';
-
-                            $matched = array_slice($matched, 1);
-
-                            if ( is_callable( $this->_callbacks[$pos] ) ){
-
-                                call_user_func_array( $this->_callbacks[$pos], $matched);
-
-                            } elseif ( is_string( $this->_callbacks[$pos] ) ){
-
-                                $parts = explode('@', $this->_callbacks[$pos]);
-
-                                $controller = new $parts[0];
-                                $method = $parts[1];
-
-                                if ( method_exists( $controller, $method ) ){
-                                    call_user_func_array( [ $controller, $method ], $matched );
-                                } else {
-                                    throw new \Exception( 'Route handle is not a found.');
-                                }
-
-                            } else {
-                                throw new \Exception( 'Route handle is not a callback or class name.');
-                            }
-                        }
-                    }
-
-                    $pos++;
-                }
+                $this->_regexMatch( $uri, $method );
             }
 
             //如果路由没有找到
@@ -161,7 +102,68 @@
             }
         }
 
-        public function _regexMatch(){
+        protected function _regexMatch( $uri, $method ){
+
+            $pos = 0;
+
+            foreach( $this->_routers as $router ){
+
+                $router = preg_replace_callback('#:[^/)]+#i', function( $matches ){
+
+                    if (isset( self::COMMON_PATTERNS[$matches[0]] ) ) {
+
+                        return self::COMMON_PATTERNS[$matches[0]];
+
+                    } else {
+
+                        return '([^/]+)';
+                    }
+
+                    }, $router);
+
+                /*
+                if ( strpos( $router, ':' ) !== false) {
+                    $router = str_replace( array_keys(self::COMMON_PATTERNS), array_values(self::COMMON_PATTERNS), $router );
+                }*/
+
+                //uri matched
+                if ( preg_match( '#^'. $router .'$#', $uri, $matched) ){
+
+                    //request method matched
+                    if ( $this->_methods[$pos] == $method || $this->_methods[$pos] == self::ANY_METHOD ){
+
+                        $this->_foundRouter = true;
+
+                        //echo "允许的method: ".$this->_methods[$pos].'<br />';
+                        //echo "请求的method: ".$method.'<br />';
+
+                        $matched = array_slice($matched, 1);
+
+                        if ( is_callable( $this->_callbacks[$pos] ) ){
+
+                            call_user_func_array( $this->_callbacks[$pos], $matched);
+
+                        } elseif ( is_string( $this->_callbacks[$pos] ) ){
+
+                            $parts = explode('@', $this->_callbacks[$pos]);
+
+                            $controller = new $parts[0];
+                            $method = $parts[1];
+
+                            if ( method_exists( $controller, $method ) ){
+                                call_user_func_array( [ $controller, $method ], $matched );
+                            } else {
+                                throw new \Exception( 'Route handle is not a found.');
+                            }
+
+                        } else {
+                            throw new \Exception( 'Route handle is not a callback or class name.');
+                        }
+                    }
+                }
+
+                $pos++;
+            }
 
         }
     }
@@ -200,6 +202,7 @@
     $route->get('/user/:name', function( $name ){
         var_dump( $name );
     });
+
 
     $route->any('/(:any)', function( $value ){
         var_dump( $value );
