@@ -183,7 +183,6 @@
     });
 
     $route->any('/:any', function( ){
-        echo $any;
         var_dump( 'xxx' );
     });
 
