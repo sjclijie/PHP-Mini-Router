@@ -62,9 +62,23 @@
 
                 foreach( $this->_routers as $router ){
 
+                    $router = preg_replace_callback('#:[^/)]+#i', function( $matches ){
+
+                        if (isset( self::COMMON_PATTERNS[$matches[0]] ) ) {
+
+                            return self::COMMON_PATTERNS[$matches[0]];
+
+                        } else {
+
+                            return '([^/]+)';
+                        }
+
+                    }, $router);
+
+                    /*
                     if ( strpos( $router, ':' ) !== false) {
                         $router = str_replace( array_keys(self::COMMON_PATTERNS), array_values(self::COMMON_PATTERNS), $router );
-                    }
+                    }*/
 
                     //uri matched
                     if ( preg_match( '#^'. $router .'$#', $uri, $matched) ){
@@ -154,6 +168,7 @@
 
     $route = new Router();
 
+
     $route->any( '/any', function(){
         echo 'xxx';
     } );
@@ -178,12 +193,16 @@
         echo 'aaa/bbb/ccc';
     });
 
-    $route->get('/user/:name', function( $name ){
-        var_dump($name);
+    $route->get('/test/(:aaa)/(:bbb)', function( $aaa, $bbb ){
+        var_dump( $aaa, $bbb );
     });
 
-    $route->any('/:any', function( ){
-        var_dump( 'xxx' );
+    $route->get('/user/:name', function( $name ){
+        var_dump( $name );
+    });
+
+    $route->any('/(:any)', function( $value ){
+        var_dump( $value );
     });
 
     $route->error(function(){
